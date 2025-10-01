@@ -4,10 +4,10 @@ Resource         ../Resources/common.robot
 Resource         ../Resources/variables.robot
 
 *** Test Cases ***
-Example Test Case - Verify Google Search
-    [Documentation]    Example test case that performs a Google search
+Example Test Case - Verify Search
+    [Documentation]    Example test case that performs a DuckDuckGo search
     [Tags]    smoke    example
-    Open Browser To Google
+    Open Browser To Search
     Search For    Robot Framework
     Page Should Contain    Robot Framework
     [Teardown]    Close Browser
