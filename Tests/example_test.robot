@@ -1,30 +1,42 @@
 *** Settings ***
-Documentation     Example test suite demonstrating Robot Framework usage
-Resource         ../Resources/common.robot
-Resource         ../Resources/variables.robot
-Resource         ../Resources/screenshot_library.robot
+Documentation     Production test suite demonstrating key features and best practices
+Resource         ../Resources/generics/setup_teardown.robot
+Resource         ../Resources/page_objects/search_page.robot
 
-Suite Setup      Suite Setup
-Suite Teardown   Suite Teardown
-Test Setup       Test Setup
-Test Teardown    Test Teardown
+Suite Setup      Start Test
+Suite Teardown   End Suite
+Test Setup       Start Test
+Test Teardown    End Test
+
+Force Tags      regression    production
 
 *** Test Cases ***
-Example Test Case - Verify Search
-    [Documentation]    Example test case that performs a DuckDuckGo search
-    [Tags]    smoke    example
+Verify Search Functionality
+    [Documentation]    Validates core search functionality
+    [Tags]    smoke    search    critical
+    [Timeout]    1 minute
     Search For    Robot Framework
-    Page Should Contain    Robot Framework
 
-Example Test Case - Basic Arithmetic
-    [Documentation]    Example test case demonstrating variable usage and assertions
-    [Tags]    example
+Verify Basic Calculations
+    [Documentation]    Validates basic calculation functionality
+    [Tags]    unit    calculator
+    [Timeout]    30 seconds
     ${result}=    Evaluate    2 + 2
     Should Be Equal As Numbers    ${result}    4
-    Log    The result is ${result}
+    Log    Calculation verified: 2 + 2 = ${result}
 
-Example Test Case - Intentionally Failing
-    [Documentation]    This test case is designed to fail to demonstrate screenshot capture
-    [Tags]    negative
-    [Setup]    Test Setup    url=https://www.example.com
-    Page Should Contain    This text definitely won't be on the page
+Verify Error Handling
+    [Documentation]    Demonstrates error handling and screenshot capture
+    [Tags]    negative    error-handling
+    [Timeout]    30 seconds
+    [Setup]    Start Test    https://example.com
+    Run Keyword And Expect Error    *    Page Should Contain    This text does not exist
+    Log    Error handling verified successfully    WARN
+
+Verify Search Results Validation
+    [Documentation]    Demonstrates failing test with screenshot capture
+    [Tags]    negative    search    validation
+    [Timeout]    30 seconds
+    Search For    Robot Framework
+    # This should fail and trigger screenshot capture
+    Page Should Contain    This text definitely does not exist in search results
