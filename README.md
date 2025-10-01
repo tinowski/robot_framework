@@ -1,180 +1,296 @@
 # Robot Framework Test Automation Project
 
-This project demonstrates a well-structured Robot Framework setup for test automation. Below you'll find detailed explanations of the project structure, dependencies, and design decisions.
+A clean, maintainable test automation framework that's easy to understand and extend.
 
-## Project Structure Explanation
+## Project Structure
 
 ```
 robot_framework/
-├── requirements.txt      # Project dependencies
-├── Resources/           # Reusable test resources
-│   ├── common.robot     # Shared keywords and functions
-│   └── variables.robot  # Global variables and configuration
-├── Tests/               # Test suites directory
-│   └── example_test.robot  # Example test cases
-└── Results/            # Test execution reports and logs
+├── Tests/               # Your test files
+│   └── example_test.robot
+├── Resources/           # Shared test resources
+│   ├── common.robot     # Common keywords
+│   ├── variables.robot  # Shared variables
+│   └── screenshot_library.robot
+├── Screenshots/         # Test failure screenshots
+├── Results/            # Test reports and logs
+├── run_tests.sh        # Test runner script
+└── requirements.txt    # Python dependencies
 ```
 
-## Dependencies (requirements.txt)
+## Quick Start
 
-We've chosen specific versions of key dependencies:
+1. Install Python dependencies:
+```bash
+pip install -r requirements.txt
+```
 
-- `robotframework>=6.1.1`: Core framework with latest stable features
-- `robotframework-seleniumlibrary>=6.1.3`: For web UI testing, includes modern web automation capabilities
-- `robotframework-requests>=0.9.5`: For API testing support
-- `selenium>=4.15.2`: Latest stable Selenium for reliable web automation
-- `webdrivermanager>=0.10.0`: Automatic WebDriver management
+2. Run the tests:
+```bash
+./run_tests.sh
+```
 
-### Why These Versions?
-- Using version constraints (>=) allows for compatible updates while ensuring minimum feature availability
-- Selected versions are stable and widely adopted in the community
-- Includes support for both UI and API testing capabilities
+## Writing Tests
 
-## Resource Files Explained
+### Basic Test Structure
+Here's a simple test case example:
 
-### common.robot
-Contains shared keywords and functions that can be reused across test suites:
-- Browser management keywords
-- Common page interactions
-- Reusable verification steps
+```robotframework
+*** Settings ***
+Documentation     Example test suite
+Resource          ../Resources/common.robot
+Resource          ../Resources/variables.robot
 
-Benefits:
-- Reduces code duplication
-- Centralizes common functionality
-- Makes tests more maintainable
-- Follows DRY (Don't Repeat Yourself) principle
+*** Test Cases ***
+Search For Something
+    [Documentation]    Performs a search and verifies results
+    [Tags]    smoke    search
+    Open Browser To Search
+    Search For    Robot Framework
+    Page Should Contain    Robot Framework
+    [Teardown]    Close Browser
+```
 
-### variables.robot
-Centralizes configuration and test data:
-- Browser settings
-- Application URLs
-- Locator definitions
-- Test environment configurations
+### Using Variables
+Define your variables in `variables.robot`:
 
-Benefits:
-- Easy configuration management
-- Environment-specific settings in one place
-- Simplified maintenance
-- Supports test environment flexibility
+```robotframework
+*** Variables ***
+${BROWSER}         chrome
+${SEARCH_URL}      https://duckduckgo.com
+${SEARCH_INPUT}    id=searchbox_input
+```
 
-## Test Structure (example_test.robot)
+Use them in your tests:
+```robotframework
+Open Browser    ${SEARCH_URL}    ${BROWSER}
+Input Text      ${SEARCH_INPUT}    search term
+```
 
-The example test suite demonstrates Robot Framework best practices:
+### Creating Keywords
+Add reusable keywords in `common.robot`:
 
-1. **Settings Section**
-   - Documentation for clear test purpose
-   - Resource imports for modularity
-   - Test setup/teardown for reliable execution
+```robotframework
+*** Keywords ***
+Search For
+    [Arguments]    ${search_term}
+    Wait Until Element Is Visible    ${SEARCH_INPUT}
+    Input Text    ${SEARCH_INPUT}    ${search_term}
+    Press Keys    ${SEARCH_INPUT}    RETURN
+```
 
-2. **Test Cases Section**
-   - Clear test case names
-   - Descriptive documentation
-   - Appropriate tagging for test organization
-   - Independent test cases
-   - Built-in verification keywords
+### Handling Screenshots
+Screenshots are automatically taken when tests fail. They are:
+- Saved in the `Screenshots/` directory
+- Named after the failing test
+- Only captured on failure
 
-### Test Design Principles
-- Each test has a single responsibility
-- Tests are independent and can run in any order
-- Clear setup and cleanup procedures
-- Descriptive naming conventions
-- Appropriate use of tags for test organization
+Example screenshot name:
+```
+Search_For_Something_FAILED.png
+```
 
 ## Running Tests
 
-### Basic Test Execution
+### Basic Run
 ```bash
-robot -d Results Tests/
+./run_tests.sh
 ```
 
-### Advanced Test Execution Options
+### Run Specific Tests
 ```bash
 # Run tests with specific tag
-robot -d Results -i smoke Tests/
+robot -i smoke Tests/
 
-# Run tests with custom variables
-robot -d Results -v BROWSER:firefox Tests/
+# Run single test file
+robot Tests/example_test.robot
 
-# Run tests in parallel (requires pabot)
-pabot --processes 2 -d Results Tests/
+# Run with custom browser
+robot -v BROWSER:firefox Tests/
 ```
 
-## Best Practices Implemented
+### Test Results
+After running tests, you'll find:
+- `log.html` - Detailed test execution log
+- `report.html` - Test result summary
+- `output.xml` - Raw test data
+- Screenshots of any failures in `Screenshots/`
 
-1. **Project Organization**
-   - Clear separation of concerns
-   - Modular test structure
-   - Centralized resources
-   - Organized test results
+## Common Patterns
 
-2. **Code Maintainability**
-   - Reusable keywords
-   - Centralized variables
-   - Clear documentation
-   - Consistent naming conventions
+### Waiting for Elements
+Always use explicit waits:
+```robotframework
+# Good - Explicit wait
+Wait Until Element Is Visible    ${SEARCH_INPUT}
+Input Text    ${SEARCH_INPUT}    search term
 
-3. **Test Reliability**
-   - Proper setup and teardown
-   - Explicit wait conditions
-   - Error handling
-   - Independent test cases
+# Bad - No wait
+Input Text    ${SEARCH_INPUT}    search term
+```
 
-4. **Scalability**
-   - Easy to add new test suites
-   - Reusable components
-   - Configurable test environment
-   - Support for parallel execution
+### Error Handling
+Use try-catch pattern:
+```robotframework
+*** Keywords ***
+Handle Cookie Consent
+    ${status}=    Run Keyword And Return Status
+    ...    Wait Until Element Is Visible    ${COOKIE_BANNER}
+    Run Keyword If    ${status}    Click Element    ${COOKIE_BANNER}
+```
 
-## Development Guidelines
+### Test Setup/Teardown
+Always clean up after tests:
+```robotframework
+*** Settings ***
+Test Setup       Open Test Browser
+Test Teardown    Close All Browsers
 
-1. **Writing New Tests**
-   - Use existing keywords from common.robot when possible
-   - Add new keywords to common.robot only if they are truly reusable
-   - Follow the existing naming conventions
-   - Include proper documentation and tags
+*** Keywords ***
+Open Test Browser
+    Open Browser    ${URL}    ${BROWSER}
+    Maximize Browser Window
+```
 
-2. **Maintaining Tests**
-   - Keep test cases focused and independent
-   - Update documentation when changing functionality
-   - Regularly review and update dependencies
-   - Clean up test results directory regularly
+## Best Practices
 
-## Setup Instructions
+### 1. Test Organization
+✅ DO:
+```robotframework
+*** Test Cases ***
+User Can Login
+    [Documentation]    Verifies user login works
+    [Tags]    smoke    login
+    Enter Login Details    ${USERNAME}    ${PASSWORD}
+    Submit Login Form
+    Verify Login Success
+```
 
-1. Install Python 3.x if not already installed
-2. Create and activate a virtual environment (recommended):
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-4. Verify installation:
-   ```bash
-   robot --version
-   ```
+❌ DON'T:
+```robotframework
+*** Test Cases ***
+Test 1
+    [Documentation]    Tests stuff
+    Do Many Things
+    Check Many Things
+```
+
+### 2. Variable Naming
+✅ DO:
+```robotframework
+${LOGIN_BUTTON}      id=loginBtn
+${ERROR_MESSAGE}     css=.error-text
+```
+
+❌ DON'T:
+```robotframework
+${btn}              id=loginBtn
+${error_msg}        css=.error-text
+```
+
+### 3. Keyword Organization
+✅ DO:
+```robotframework
+*** Keywords ***
+Enter Login Details
+    [Arguments]    ${username}    ${password}
+    Input Text    ${USERNAME_FIELD}    ${username}
+    Input Text    ${PASSWORD_FIELD}    ${password}
+```
+
+❌ DON'T:
+```robotframework
+*** Keywords ***
+Do Login Stuff
+    [Arguments]    ${u}    ${p}
+    Input Text    id=user    ${u}
+    Input Text    id=pass    ${p}
+```
 
 ## Troubleshooting
 
-Common issues and solutions:
+### Common Issues
 
-1. **WebDriver Issues**
-   - Ensure webdrivermanager is installed
-   - Check browser compatibility with Selenium version
-   - Verify PATH environment variable includes webdriver location
+1. **Element Not Found**
+```robotframework
+# Solution: Add explicit wait
+Wait Until Element Is Visible    ${ELEMENT}    timeout=10s
+Click Element    ${ELEMENT}
+```
 
-2. **Test Execution Problems**
-   - Check Python environment activation
-   - Verify all dependencies are installed
-   - Review test logs in Results directory
-   - Ensure proper network connectivity for web tests
+2. **Test Timing Out**
+```robotframework
+# Solution: Adjust timeout in wait commands
+Wait Until Page Contains    ${TEXT}    timeout=20s
+```
+
+3. **Screenshot Issues**
+Check:
+- Screenshots directory exists
+- Test has proper [Teardown]
+- Permissions are correct
+
+## Configuration
+
+### Browser Options
+In `variables.robot`:
+```robotframework
+*** Variables ***
+${CHROME_OPTIONS}    options=add_argument("--start-maximized");add_argument("--disable-notifications")
+```
+
+### Test Timeouts
+In your test file:
+```robotframework
+*** Settings ***
+Test Timeout    2 minutes
+
+*** Test Cases ***
+Long Running Test
+    [Timeout]    5 minutes
+    Run Long Process
+```
+
+## Maintenance
+
+### Adding New Tests
+1. Create new .robot file in Tests/
+2. Follow existing test structure
+3. Use shared resources
+4. Add appropriate documentation
+
+### Updating Keywords
+1. Check existing usage
+2. Update documentation
+3. Update any dependent tests
+4. Run full test suite
+
+## Dependencies
+
+Current versions:
+```
+robotframework>=6.1.1
+robotframework-seleniumlibrary>=6.1.3
+robotframework-requests>=0.9.5
+selenium>=4.15.2
+webdriver-manager>=4.0.1
+```
 
 ## Contributing
 
-When contributing to this project:
-1. Follow the existing structure and naming conventions
-2. Add appropriate documentation
-3. Include test tags for organization
-4. Update this README when adding new features or patterns
+1. Follow existing patterns
+2. Add clear documentation
+3. Include example usage
+4. Test thoroughly
+
+## Version Control
+
+The following are ignored in git:
+```gitignore
+# Test outputs
+Results/
+Screenshots/
+*.html
+*.xml
+*.png
+```

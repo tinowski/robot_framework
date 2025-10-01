@@ -2,6 +2,9 @@
 Documentation     Example test suite demonstrating Robot Framework usage
 Resource         ../Resources/common.robot
 Resource         ../Resources/variables.robot
+Resource         ../Resources/screenshot_library.robot
+
+Test Teardown    Run Keyword If Test Failed    Take Screenshot On Failure    ${TEST_NAME}
 
 *** Test Cases ***
 Example Test Case - Verify Search

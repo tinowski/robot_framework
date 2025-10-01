@@ -208,9 +208,10 @@ __marimo__/
 
 # Robot Framework
 Results/
+Screenshots/
 *.html
 *.xml
 log.html
 output.xml
 report.html
-selenium-screenshot-*.png
+*.png

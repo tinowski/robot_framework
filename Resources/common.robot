@@ -1,6 +1,6 @@
 *** Settings ***
-Library    SeleniumLibrary
 Resource    variables.robot
+Library    SeleniumLibrary
 
 *** Keywords ***
 Open Browser To Search
