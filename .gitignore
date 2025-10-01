@@ -205,3 +205,11 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Robot Framework
+output.xml
+log.html
+report.html
+selenium-screenshot-*.png
+results/
+output/
