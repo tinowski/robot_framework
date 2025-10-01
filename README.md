@@ -1,93 +1,128 @@
 # Robot Framework Test Automation Project
 
-A clean, maintainable test automation framework that's easy to understand and extend.
+A clean, maintainable test automation framework with reusable components and smart screenshot handling.
 
 ## Project Structure
 
 ```
 robot_framework/
-├── Tests/               # Your test files
+├── Tests/               # Test suites
 │   └── example_test.robot
-├── Resources/           # Shared test resources
-│   ├── common.robot     # Common keywords
+├── Resources/           # Shared resources
+│   ├── common.robot     # Common keywords and setup/teardown
 │   ├── variables.robot  # Shared variables
 │   └── screenshot_library.robot
-├── Screenshots/         # Test failure screenshots
+├── Screenshots/         # Failure screenshots
 ├── Results/            # Test reports and logs
-├── run_tests.sh        # Test runner script
-└── requirements.txt    # Python dependencies
+├── run_tests.sh        # Test execution script
+└── requirements.txt    # Dependencies
 ```
 
 ## Quick Start
 
-1. Install Python dependencies:
+1. Install dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Run the tests:
+2. Run tests:
 ```bash
 ./run_tests.sh
 ```
 
-## Writing Tests
+## Key Features
 
-### Basic Test Structure
-Here's a simple test case example:
+### 1. Reusable Setup and Teardown
 
+Suite level setup/teardown:
 ```robotframework
 *** Settings ***
-Documentation     Example test suite
+Suite Setup      Suite Setup
+Suite Teardown   Suite Teardown
+```
+
+Test level setup/teardown with configurable parameters:
+```robotframework
+*** Settings ***
+Test Setup       Test Setup    browser=chrome    url=https://example.com
+Test Teardown    Test Teardown    screenshot_name=${TEST NAME}
+```
+
+Available Setup Functions:
+```robotframework
+# Suite Level
+Suite Setup
+    - Creates Screenshots directory
+    - Sets screenshot location
+
+Suite Teardown
+    - Closes all browsers
+    - Cleans up resources
+
+# Test Level
+Test Setup
+    [Arguments]    ${browser}=${BROWSER}    ${url}=${SEARCH_URL}    ${options}=${CHROME_OPTIONS}
+    - Sets Selenium speed
+    - Creates Screenshots directory
+    - Opens browser with options
+    - Handles cookie consent
+
+Test Teardown
+    [Arguments]    ${screenshot_name}=${TEST NAME}
+    - Takes screenshot on failure
+    - Closes all browsers
+```
+
+### 2. Smart Screenshot Handling
+
+Automatic screenshot capture for failures:
+```robotframework
+*** Test Cases ***
+Example Test
+    [Documentation]    Screenshots automatically captured on failure
+    [Tags]    example
+    Run Keyword And Expect Error    *    Should Be True    False
+```
+
+Screenshot Features:
+- Only captures on test failure
+- Meaningful names with timestamp
+- Stored in dedicated Screenshots directory
+- Automatic cleanup of selenium screenshots
+- Custom screenshot library for reliability
+
+### 3. Cookie Consent Handling
+
+Robust cookie handling with multiple strategies:
+```robotframework
+Handle Cookie Consent
+    # Tries multiple approaches:
+    - iframe detection and handling
+    - Multiple button patterns
+    - JavaScript fallback
+    - Error recovery
+```
+
+### 4. Test Organization
+
+Example test structure:
+```robotframework
+*** Settings ***
+Documentation     Test suite description
 Resource          ../Resources/common.robot
 Resource          ../Resources/variables.robot
 
+Suite Setup      Suite Setup
+Suite Teardown   Suite Teardown
+Test Setup       Test Setup
+Test Teardown    Test Teardown
+
 *** Test Cases ***
-Search For Something
-    [Documentation]    Performs a search and verifies results
-    [Tags]    smoke    search
-    Open Browser To Search
+Example Test Case
+    [Documentation]    Test case description
+    [Tags]    category    type
     Search For    Robot Framework
-    Page Should Contain    Robot Framework
-    [Teardown]    Close Browser
-```
-
-### Using Variables
-Define your variables in `variables.robot`:
-
-```robotframework
-*** Variables ***
-${BROWSER}         chrome
-${SEARCH_URL}      https://duckduckgo.com
-${SEARCH_INPUT}    id=searchbox_input
-```
-
-Use them in your tests:
-```robotframework
-Open Browser    ${SEARCH_URL}    ${BROWSER}
-Input Text      ${SEARCH_INPUT}    search term
-```
-
-### Creating Keywords
-Add reusable keywords in `common.robot`:
-
-```robotframework
-*** Keywords ***
-Search For
-    [Arguments]    ${search_term}
-    Wait Until Element Is Visible    ${SEARCH_INPUT}
-    Input Text    ${SEARCH_INPUT}    ${search_term}
-    Press Keys    ${SEARCH_INPUT}    RETURN
-```
-
-### Handling Screenshots
-Screenshots are automatically taken when tests fail. They are:
-- Saved in the `Screenshots/` directory
-- Named after the failing test
-- Only captured on failure
-
-Example screenshot name:
-```
-Search_For_Something_FAILED.png
+    Page Should Contain    Expected Result
 ```
 
 ## Running Tests
@@ -99,8 +134,8 @@ Search_For_Something_FAILED.png
 
 ### Run Specific Tests
 ```bash
-# Run tests with specific tag
-robot -i smoke Tests/
+# Run by tag
+robot --include smoke Tests/
 
 # Run single test file
 robot Tests/example_test.robot
@@ -109,161 +144,79 @@ robot Tests/example_test.robot
 robot -v BROWSER:firefox Tests/
 ```
 
-### Test Results
-After running tests, you'll find:
-- `log.html` - Detailed test execution log
-- `report.html` - Test result summary
-- `output.xml` - Raw test data
-- Screenshots of any failures in `Screenshots/`
+## Test Results
 
-## Common Patterns
-
-### Waiting for Elements
-Always use explicit waits:
-```robotframework
-# Good - Explicit wait
-Wait Until Element Is Visible    ${SEARCH_INPUT}
-Input Text    ${SEARCH_INPUT}    search term
-
-# Bad - No wait
-Input Text    ${SEARCH_INPUT}    search term
-```
-
-### Error Handling
-Use try-catch pattern:
-```robotframework
-*** Keywords ***
-Handle Cookie Consent
-    ${status}=    Run Keyword And Return Status
-    ...    Wait Until Element Is Visible    ${COOKIE_BANNER}
-    Run Keyword If    ${status}    Click Element    ${COOKIE_BANNER}
-```
-
-### Test Setup/Teardown
-Always clean up after tests:
-```robotframework
-*** Settings ***
-Test Setup       Open Test Browser
-Test Teardown    Close All Browsers
-
-*** Keywords ***
-Open Test Browser
-    Open Browser    ${URL}    ${BROWSER}
-    Maximize Browser Window
-```
+After test execution:
+- Test reports in Results/
+- Failure screenshots in Screenshots/
+- Screenshot naming: `Test_Name_Timestamp_FAILED.png`
 
 ## Best Practices
 
-### 1. Test Organization
-✅ DO:
+### 1. Test Structure
 ```robotframework
 *** Test Cases ***
-User Can Login
-    [Documentation]    Verifies user login works
-    [Tags]    smoke    login
-    Enter Login Details    ${USERNAME}    ${PASSWORD}
-    Submit Login Form
-    Verify Login Success
+Test Name
+    [Documentation]    Clear description
+    [Tags]    category    type
+    [Setup]    Test Setup    url=https://example.com
+    Test Steps
+    Verification Steps
 ```
 
-❌ DON'T:
+### 2. Error Handling
 ```robotframework
-*** Test Cases ***
-Test 1
-    [Documentation]    Tests stuff
-    Do Many Things
-    Check Many Things
+Run Keyword And Ignore Error    Handle Cookie Consent
+Run Keyword If Test Failed    Take Screenshot    ${TEST NAME}
 ```
 
-### 2. Variable Naming
-✅ DO:
+### 3. Resource Organization
+- Common keywords in common.robot
+- Variables in variables.robot
+- Screenshot handling in screenshot_library.robot
+
+### 4. Screenshot Management
+- Automatic cleanup of selenium screenshots
+- Meaningful screenshot names
+- Organized in Screenshots directory
+- Only captured for failures
+
+## Configuration
+
+### Browser Options
 ```robotframework
-${LOGIN_BUTTON}      id=loginBtn
-${ERROR_MESSAGE}     css=.error-text
+${CHROME_OPTIONS}    options=add_argument("--start-maximized"); add_argument("--disable-notifications")
 ```
 
-❌ DON'T:
+### Test Timeouts
 ```robotframework
-${btn}              id=loginBtn
-${error_msg}        css=.error-text
+*** Settings ***
+Test Timeout    1 minute
 ```
 
-### 3. Keyword Organization
-✅ DO:
+### Screenshot Directory
 ```robotframework
-*** Keywords ***
-Enter Login Details
-    [Arguments]    ${username}    ${password}
-    Input Text    ${USERNAME_FIELD}    ${username}
-    Input Text    ${PASSWORD_FIELD}    ${password}
-```
-
-❌ DON'T:
-```robotframework
-*** Keywords ***
-Do Login Stuff
-    [Arguments]    ${u}    ${p}
-    Input Text    id=user    ${u}
-    Input Text    id=pass    ${p}
+${SCREENSHOTS_DIR}    ${CURDIR}/../Screenshots
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Element Not Found**
-```robotframework
-# Solution: Add explicit wait
-Wait Until Element Is Visible    ${ELEMENT}    timeout=10s
-Click Element    ${ELEMENT}
-```
+1. **Screenshot Not Captured**
+   - Check Screenshots directory permissions
+   - Verify browser is still open
+   - Check error messages in log
 
-2. **Test Timing Out**
-```robotframework
-# Solution: Adjust timeout in wait commands
-Wait Until Page Contains    ${TEXT}    timeout=20s
-```
+2. **Cookie Consent Issues**
+   - Multiple retry strategies implemented
+   - Check for iframe presence
+   - JavaScript fallback available
 
-3. **Screenshot Issues**
-Check:
-- Screenshots directory exists
-- Test has proper [Teardown]
-- Permissions are correct
-
-## Configuration
-
-### Browser Options
-In `variables.robot`:
-```robotframework
-*** Variables ***
-${CHROME_OPTIONS}    options=add_argument("--start-maximized");add_argument("--disable-notifications")
-```
-
-### Test Timeouts
-In your test file:
-```robotframework
-*** Settings ***
-Test Timeout    2 minutes
-
-*** Test Cases ***
-Long Running Test
-    [Timeout]    5 minutes
-    Run Long Process
-```
-
-## Maintenance
-
-### Adding New Tests
-1. Create new .robot file in Tests/
-2. Follow existing test structure
-3. Use shared resources
-4. Add appropriate documentation
-
-### Updating Keywords
-1. Check existing usage
-2. Update documentation
-3. Update any dependent tests
-4. Run full test suite
+3. **Browser Issues**
+   - Chrome options configurable
+   - Automatic cleanup on failure
+   - Error recovery in place
 
 ## Dependencies
 
@@ -279,9 +232,10 @@ webdriver-manager>=4.0.1
 ## Contributing
 
 1. Follow existing patterns
-2. Add clear documentation
-3. Include example usage
-4. Test thoroughly
+2. Use reusable setup/teardown
+3. Implement proper error handling
+4. Add appropriate documentation
+5. Test thoroughly
 
 ## Version Control
 
