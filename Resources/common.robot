@@ -1,8 +1,29 @@
 *** Settings ***
 Resource    variables.robot
 Library    SeleniumLibrary
+Library    OperatingSystem
 
 *** Keywords ***
+Test Setup
+    [Arguments]    ${browser}=${BROWSER}    ${url}=${SEARCH_URL}    ${options}=${CHROME_OPTIONS}
+    Set Selenium Speed    ${DELAY}
+    Create Directory    ${SCREENSHOTS_DIR}
+    Open Browser    ${url}    ${browser}    ${options}
+    Maximize Browser Window
+    Run Keyword And Ignore Error    Handle Cookie Consent
+
+Test Teardown
+    [Arguments]    ${screenshot_name}=${TEST NAME}
+    Run Keyword If Test Failed    Take Screenshot On Failure    ${screenshot_name}
+    Close All Browsers
+
+Suite Setup
+    Create Directory    ${SCREENSHOTS_DIR}
+    Set Screenshot Directory    ${SCREENSHOTS_DIR}
+
+Suite Teardown
+    Close All Browsers
+
 Open Browser To Search
     Open Browser    ${SEARCH_URL}    ${BROWSER}    ${CHROME_OPTIONS}
     Set Selenium Speed    ${DELAY}
